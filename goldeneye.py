@@ -582,12 +582,12 @@ def main():
 
         parser = argparse.ArgumentParser(add_help=False)
         parser.add_argument("url", type=str)
-        parser.add_argument("-n", "--nosslcheck", action="store_true")
-        parser.add_argument("-d", "--debug", action="store_true")
-        parser.add_argument("-w", "--workers", default=DEFAULT_WORKERS, type=int)
-        parser.add_argument("-s", "--sockets", default=DEFAULT_SOCKETS, type=int)
-        parser.add_argument("-m", "--method", default=METHOD_GET, type=str)
-        parser.add_argument("-u", "--useragents", type=str)
+        parser.add_argument("-n", "--nosslcheck", action="store_true", help="Do not verify SSL Certificate")
+        parser.add_argument("-d", "--debug", action="store_true", help="Enable Debug Mode [more verbose output]")
+        parser.add_argument("-w", "--workers", default=DEFAULT_WORKERS, help="Number of concurrent workers", type=int)
+        parser.add_argument("-s", "--sockets", default=DEFAULT_SOCKETS, help="Number of concurrent sockets", type=int)
+        parser.add_argument("-m", "--method", default=METHOD_GET, help="HTTP Method to use 'get' or 'post'  or 'random'" type=str)
+        parser.add_argument("-u", "--useragents", help="File with user-agents to use (default: randomly generated)", type=str)
         parser.add_argument("-h", "--help", action='store_true')
         workers = DEFAULT_WORKERS
         socks = DEFAULT_SOCKETS
