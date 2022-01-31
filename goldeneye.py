@@ -43,6 +43,7 @@ from multiprocessing import Process, Manager, Pool
 import urllib.parse, ssl
 import sys, getopt, random, time, os
 import http.client
+import argparse
 HTTPCLIENT = http.client
 
 ####
@@ -532,26 +533,30 @@ class Striker(Process):
 # Other Functions
 ####
 
-def usage():
-    print()
-    print('-----------------------------------------------------------------------------------------------------------')
-    print()
-    print(GOLDENEYE_BANNER)
-    print()
-    print(' USAGE: ./goldeneye.py <url> [OPTIONS]')
-    print()
-    print(' OPTIONS:')
-    print('\t Flag\t\t\tDescription\t\t\t\t\t\tDefault')
-    print('\t -u, --useragents\tFile with user-agents to use\t\t\t\t(default: randomly generated)')
-    print('\t -w, --workers\t\tNumber of concurrent workers\t\t\t\t(default: {0})'.format(DEFAULT_WORKERS))
-    print('\t -s, --sockets\t\tNumber of concurrent sockets\t\t\t\t(default: {0})'.format(DEFAULT_SOCKETS))
-    print('\t -m, --method\t\tHTTP Method to use \'get\' or \'post\'  or \'random\'\t\t(default: get)')
-    print('\t -n, --nosslcheck\tDo not verify SSL Certificate\t\t\t\t(default: True)')
-    print('\t -d, --debug\t\tEnable Debug Mode [more verbose output]\t\t\t(default: False)')
-    print('\t -h, --help\t\tShows this help')
-    print()
-    print('-----------------------------------------------------------------------------------------------------------')
+def get_help_message():
+    help_message = ''
+    help_message += '\n'
+    help_message += '-----------------------------------------------------------------------------------------------------------\n'
+    help_message += '\n'
+    help_message += GOLDENEYE_BANNER + '\n'
+    help_message += '\n'
+    help_message += ' USAGE: ./goldeneye.py <url> [OPTIONS]\n'
+    help_message += '\n'
+    help_message += ' OPTIONS:\n'
+    help_message += '\t Flag\t\t\tDescription\t\t\t\t\t\tDefault\n'
+    help_message += '\t -u, --useragents\tFile with user-agents to use\t\t\t\t(default: randomly generated)\n'
+    help_message += '\t -w, --workers\t\tNumber of concurrent workers\t\t\t\t(default: {0})\n'.format(DEFAULT_WORKERS)
+    help_message += '\t -s, --sockets\t\tNumber of concurrent sockets\t\t\t\t(default: {0})\n'.format(DEFAULT_SOCKETS)
+    help_message += '\t -m, --method\t\tHTTP Method to use \'get\' or \'post\'  or \'random\'\t\t(default: get)\n'
+    help_message += '\t -n, --nosslcheck\tDo not verify SSL Certificate\t\t\t\t(default: True)\n'
+    help_message += '\t -d, --debug\t\tEnable Debug Mode [more verbose output]\t\t\t(default: False)\n'
+    help_message += '\t -h, --help\t\tShows this help\n'
+    help_message += '\n'
+    help_message += '-----------------------------------------------------------------------------------------------------------\n'
+    return help_message 
 
+def usage():
+    print(get_help_message())
 
 def error(msg):
     # print help information and exit:
@@ -564,7 +569,6 @@ def error(msg):
 ####
 
 def main():
-
     try:
 
         if len(sys.argv) < 2:
@@ -576,45 +580,49 @@ def main():
             usage()
             sys.exit()
 
-        if url[0:4].lower() != 'http':
-            error("Invalid URL supplied")
-
-        if url == None:
-            error("No URL supplied")
-
-        opts, args = getopt.getopt(sys.argv[2:], "ndhw:s:m:u:", ["nosslcheck", "debug", "help", "workers", "sockets", "method", "useragents" ])
-
+        parser = argparse.ArgumentParser(add_help=False)
+        parser.add_argument("url", type=str)
+        parser.add_argument("-n", "--nosslcheck", action="store_true")
+        parser.add_argument("-d", "--debug", action="store_true")
+        parser.add_argument("-w", "--workers", default=DEFAULT_WORKERS, type=int)
+        parser.add_argument("-s", "--sockets", default=DEFAULT_SOCKETS, type=int)
+        parser.add_argument("-m", "--method", default=METHOD_GET, type=str)
+        parser.add_argument("-u", "--useragents", type=str)
+        parser.add_argument("-h", "--help", action='store_true')
         workers = DEFAULT_WORKERS
         socks = DEFAULT_SOCKETS
         method = METHOD_GET
 
+        args = parser.parse_args()
+
+        url = args.url 
+
+        if url[0:4].lower() != 'http':
+            error("Invalid URL supplied")
+
         uas_file = None
         useragents = []
 
-        for o, a in opts:
-            if o in ("-h", "--help"):
-                usage()
-                sys.exit()
-            elif o in ("-u", "--useragents"):
-                uas_file = a
-            elif o in ("-s", "--sockets"):
-                socks = int(a)
-            elif o in ("-w", "--workers"):
-                workers = int(a)
-            elif o in ("-d", "--debug"):
-                global DEBUG
-                DEBUG = True
-            elif o in ("-n", "--nosslcheck"):
-                global SSLVERIFY
-                SSLVERIFY = False
-            elif o in ("-m", "--method"):
-                if a in (METHOD_GET, METHOD_POST, METHOD_RAND):
-                    method = a
-                else:
-                    error("method {0} is invalid".format(a))
-            else:
-                error("option '"+o+"' doesn't exists")
+        if args.help : 
+            usage()
+            sys.exit()
+        if args.useragents : 
+            uas_file = args.useragents
+        if args.sockets : 
+            socks = int(args.sockets)
+        if args.workers : 
+            workers = int(args.workers)
+        if args.debug : 
+            global DEBUG
+            DEBUG = True
+        if args.nosslcheck : 
+            global SSLVERIFY
+            SSLVERIFY = False
 
+        if args.method in (METHOD_GET, METHOD_POST, METHOD_RAND):
+            method = args.method
+        else :
+            error("method {0} is invalid".format(args.method))
 
         if uas_file:
             try:
@@ -628,7 +636,7 @@ def main():
         goldeneye.nr_workers = workers
         goldeneye.method = method
         goldeneye.nr_sockets = socks
-
+        
         goldeneye.fire()
 
     except getopt.GetoptError as err:
